@@ -13,7 +13,7 @@ This is the trusted backend for the HTML/CSS/Vanilla JS GitHub Pages admin dashb
 - Firebase Auth accounts are created **disabled**; Firestore username is reserved transactionally, profile inserted inactive, trusted claims set, Auth enabled, and profile activated.
 - Teacher IDs `TCH-0001`, `TCH-0002`, ... come from a Firestore transaction-backed sequence. Numbers may be skipped if a failed provisioning step needs reconciliation; **never reuse IDs**.
 - Student admission number remains permanent and manually assigned.
-- Passwords are passed over HTTPS directly to trusted backend, never stored in Firestore, static JS, GitHub, or logs.
+- Passwords are passed over HTTPS directly to trusted backend, never stored in Firestore, static JS, GitHub, or logs. Student initial passwords accept 6–128 characters, including numeric-only strings, but cannot match the admission number. Teacher initial passwords require 12–128 characters. Short numeric-only passwords are easily guessed and should be avoided.
 - Audit logs record actor UID, target UID, action and timestamps, **not passwords**.
 - GET /api/accounts returns up to **100** results per role. Pagination is not implemented; UI explicitly says so. Never mistake 100 for the entire population.
 - Changes to roles and privileged accounts are out of scope.

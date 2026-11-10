@@ -13,7 +13,7 @@ const copy={
  studentIntro:'ඇතුළත් වීමේ අංකය, ශ්‍රේණිය සහ ශිෂ්‍ය ගිණුම් ආරක්ෂිතව කළමනාකරණය කරන්න.',
  teacherIntro:'ස්වයංක්‍රීය Teacher ID, විෂයයන් සහ පවරා ඇති ශ්‍රේණි කළමනාකරණය කරන්න.',
  addStudent:'නව ශිෂ්‍ය ගිණුම',addTeacher:'නව ගුරු ගිණුම',name:'සම්පූර්ණ නම',admission:'ස්ථිර ඇතුළත් වීමේ අංකය',grade:'ශ්‍රේණිය',
- tempPassword:'ආරම්භක මුරපදය',passwordHelp:'ශිෂ්‍ය Password අවම අකුරු/ඉලක්කම් 6යි. Admission Number එකම Password එක ලෙස භාවිත නොකරන්න. වඩා දිග Password එකක් වඩා ආරක්ෂිතයි.',generatePassword:'ආරක්ෂිත Password එකක් සාදන්න',copyPassword:'Password Copy කරන්න',passwordCopied:'Password Copy කළා. ආරක්ෂිතව ශිෂ්‍යයාට ලබා දෙන්න.',noPassword:'මුලින් Password එකක් Generate කරන්න.',
+ tempPassword:'ආරම්භක මුරපදය',passwordHelp:'අවම අකුරු 6යි. ඉලක්කම් පමණක් වුණත් භාවිත කළ හැකියි. Admission Number එක හෝ පහසුවෙන් අනුමාන කළ හැකි අංක භාවිත නොකරන්න.',showPassword:'Password පෙන්වන්න',hidePassword:'Password සඟවන්න',
  saveStudent:'ශිෂ්‍ය ගිණුම සාදන්න',saveTeacher:'ගුරු ගිණුම සාදන්න',saveChanges:'වෙනස්කම් සුරකින්න',
  subjects:'විෂයයන් (කොමා වලින් වෙන් කරන්න)',assignedGrades:'පවරා ඇති ශ්‍රේණි (උදා: 6,7,8)',
  autoId:'Teacher ID එක පද්ධතියෙන් ස්වයංක්‍රීයව ලබා දෙනවා.',list:'ගිණුම් ලැයිස්තුව',search:'නම හෝ ID අනුව සොයන්න',
@@ -30,7 +30,7 @@ const copy={
  en:{
  students:'Student management',teachers:'Teacher management',studentIntro:'Securely manage permanent admission numbers, grades and student accounts.',teacherIntro:'Manage automatically assigned teacher IDs, subjects and teaching grades.',
  addStudent:'New student account',addTeacher:'New teacher account',name:'Full name',admission:'Permanent admission number',grade:'Grade',
- tempPassword:'Initial password',passwordHelp:'Student passwords require at least 6 characters. Never reuse the admission number as a password. Longer passwords are safer; share credentials privately.',generatePassword:'Generate secure password',copyPassword:'Copy password',passwordCopied:'Password copied. Share privately with the student.',noPassword:'Generate a password first.',
+ tempPassword:'Initial password',passwordHelp:'Minimum 6 characters. Numeric-only passwords are accepted. Do not use the admission number or easily guessed sequences.',showPassword:'Show password',hidePassword:'Hide password',
  saveStudent:'Create student account',saveTeacher:'Create teacher account',saveChanges:'Save changes',
  subjects:'Subjects (comma-separated)',assignedGrades:'Assigned grades (e.g. 6,7,8)',
  autoId:'A unique teacher ID will be generated automatically.',list:'Account directory',search:'Search by name or school ID',
@@ -60,26 +60,12 @@ function createNode(tag,cls,value){
 function language(){
  for(const element of document.querySelectorAll('[data-manage-text]'))element.textContent=t(element.dataset.manageText);
  for(const element of document.querySelectorAll('[data-manage-placeholder]'))element.placeholder=t(element.dataset.managePlaceholder);
- for(const role of ['student','teacher'])render(role);
-}
-/**
- * Generates a 6-character temporary password using CSPRNG; no persistence
- * in GitHub, browser storage or Firestore. 64-character alphabet allows unbiased
- * selection by masking 6 random bits.
- */
-function secureTemporaryPassword(){
- const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789-_@!';
- // Alphabet length is not a power of two: use rejection sampling to avoid bias.
- const bytes=new Uint8Array(48);let result='';
- while(result.length<6){
-  crypto.getRandomValues(bytes);
-  for(const value of bytes){
-   if(value>=Math.floor(256/alphabet.length)*alphabet.length)continue;
-   result+=alphabet[value%alphabet.length];
-   if(result.length===6)break;
-  }
+ for(const role of ['student','teacher']){
+  render(role);
+  const input=recordForm(role)?.elements.password;
+  const toggle=el(role+'-toggle-password');
+  if(input&&toggle)toggle.textContent=t(input.type==='text'?'hidePassword':'showPassword');
  }
- return result;
 }
 function parseComma(input){return input.split(',').map(s=>s.trim()).filter(Boolean)}
 function recordForm(role){return el(role+'-form')}
@@ -108,7 +94,11 @@ function resetForm(role){
  el(role+'-form-title').textContent=t(role==='student'?'addStudent':'addTeacher');
  el(role+'-submit').textContent=t(role==='student'?'saveStudent':'saveTeacher');
  el(role+'-cancel').hidden=true;
- if(role==='student')el('student-copy-password').hidden=true;
+ const passwordInput=form.elements.password;
+ passwordInput.type='password';
+ const toggle=el(role+'-toggle-password');
+ toggle.setAttribute('aria-pressed','false');
+ toggle.textContent=t('showPassword');
 }
 function render(role){
  const rows=el(role+'-rows');if(!rows)return;rows.replaceChildren();
@@ -192,21 +182,15 @@ export function initAdminManagement(){
   el(role+'-cancel').addEventListener('click',()=>resetForm(role));
   el(role+'-search').addEventListener('input',()=>render(role));
   el(role+'-refresh').addEventListener('click',()=>load(role));
+  const toggle=el(role+'-toggle-password');
+  toggle.addEventListener('click',()=>{
+   const input=form.elements.password;
+   const visible=input.type==='password';
+   input.type=visible?'text':'password';
+   toggle.textContent=t(visible?'hidePassword':'showPassword');
+   toggle.setAttribute('aria-pressed',String(visible));
+  });
   if(role==='student'){
-   const generate=el('student-generate-password');
-   const copy=el('student-copy-password');
-   generate.addEventListener('click',()=>{
-    form.elements.password.value=secureTemporaryPassword();
-    copy.hidden=false;
-    notice(role,t('passwordHelp'));
-   });
-   copy.addEventListener('click',async()=>{
-    const password=form.elements.password.value;
-    if(!password){notice(role,t('noPassword'),'error');return}
-    try{await navigator.clipboard.writeText(password);notice(role,t('passwordCopied'),'success')}
-    catch{notice(role,t('failed'),'error')}
-   });
-   form.elements.password.addEventListener('input',()=>{copy.hidden=!form.elements.password.value});
    const options=el('student-grade');
    for(let grade=1;grade<=11;grade++){const option=document.createElement('option');option.value=String(grade);option.textContent=String(grade);options.append(option)}
   }

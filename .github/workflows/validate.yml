@@ -1,0 +1,30 @@
+name: Validate static school portal
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate JS syntax
+        run: npm run check
+      - name: Verify local entry points and static assets
+        shell: bash
+        run: |
+          test -f index.html
+          test -f login.html
+          test -f css/auth.css
+          test -f css/style.css
+          test -f js/firebase.js
+          test -f js/auth.js
+          test -f js/auth-i18n.js
+          test -f js/dashboard.js
+          for role in student teacher admin principal superadmin developer; do test -f "dashboards/$role.html"; done
+          git diff --check HEAD^ HEAD || true

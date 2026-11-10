@@ -3,7 +3,7 @@ import { verifiedSession, loginUrl, dashboardUrl, logout, changePassword, ROLES 
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js';
 import { initLanguage, t, getLocale } from './auth-i18n.js';
 const role=document.body.dataset.role,loader=document.getElementById('dash-loading'),frame=document.getElementById('dash-frame');
-const sections={overview:document.getElementById('view-overview'),modules:document.getElementById('view-modules'),settings:document.getElementById('view-settings')};
+const sections={overview:document.getElementById('view-overview'),modules:document.getElementById('view-modules'),settings:document.getElementById('view-settings'),students:document.getElementById('view-students'),teachers:document.getElementById('view-teachers')};
 const moduleDefinitions={
  student:[['📚','My subjects','මගේ විෂයයන්'],['📝','Homework','ගෙදර වැඩ'],['📊','Exam results','විභාග ප්‍රතිඵල'],['📅','Timetables','කාලසටහන්'],['✓','Attendance','පැමිණීම'],['📖','Question bank','ප්‍රශ්න බැංකුව'],['✦','Activities & awards','ක්‍රියාකාරකම් සහ සම්මාන'],['🔔','Announcements','නිවේදන']],
  teacher:[['📚','Assigned grades','පවරා ඇති ශ්‍රේණි'],['📝','Homework','ගෙදර වැඩ'],['📊','Mark entry','ලකුණු ඇතුළත් කිරීම'],['📅','Timetables','කාලසටහන්'],['✓','Attendance','පැමිණීම'],['📖','Question bank','ප්‍රශ්න බැංකුව'],['🔔','Notices','නිවේදන'],['◇','Responsibilities','වගකීම්']],
@@ -22,15 +22,22 @@ function put(id,value){const element=document.getElementById(id);if(element)elem
 function view(name){for(const [key,el] of Object.entries(sections))el.hidden=key!==name;
  for(const button of document.querySelectorAll('[data-view]')){const active=button.dataset.view===name;button.classList.toggle('active',active);button.setAttribute('aria-current',active?'page':'false')}
  if(name==='settings')document.getElementById('current-password').focus();
+ document.dispatchEvent(new CustomEvent('school-dashboard-view',{detail:{view:name}}));
 }
 function fillModules(){
  const area=document.getElementById('modules-grid');area.replaceChildren();
- for(const [symbol,english,sinhala] of moduleDefinitions[role]||[]){
+ for(const [index,[symbol,english,sinhala]] of (moduleDefinitions[role]||[]).entries()){
   const card=document.createElement('article');card.className='module-card';
   const icon=document.createElement('span');icon.className='module-icon';icon.textContent=symbol;icon.setAttribute('aria-hidden','true');
   const heading=document.createElement('h3');heading.textContent=getLocale()==='si'?sinhala:english;
   const message=document.createElement('p');message.textContent=t('dashModuleSubtitle');
   const tag=document.createElement('small');tag.textContent=t('dashComing');
+  if(role==='admin'&&index<2){
+   tag.textContent=getLocale()==='si'?'කළමනාකරණයට යන්න':'Open management';
+   card.tabIndex=0;card.setAttribute('role','button');
+   const open=()=>view(index===0?'students':'teachers');
+   card.addEventListener('click',open);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}});
+  }
   card.append(icon,heading,message,tag);area.append(card);
  }
 }
@@ -47,6 +54,10 @@ function fillSession(session){
  put('dashboard-greeting',t('dashWelcome')+', '+(session.username||t('role_'+role)));
  put('dashboard-title',t('role_'+role)+' · '+t('dashSubtitle'));
  fillModules();
+ if(role==='admin'&&!window.__schoolAdminManagerInitialized){
+  window.__schoolAdminManagerInitialized=true;
+  import('./admin-management.js').then(m=>m.initAdminManagement()).catch(error=>console.error('Admin management module failed to load',error));
+ }
 }
 initLanguage();
 document.addEventListener('school-language-change',()=>{if(activeSession)fillSession(activeSession)});

@@ -26,5 +26,9 @@ jobs:
           test -f js/auth.js
           test -f js/auth-i18n.js
           test -f js/dashboard.js
+          test -f js/admin-management.js
+          test -f js/api-config.js
+          test -f css/management.css
+          test -f backend/server.mjs
           for role in student teacher admin principal superadmin developer; do test -f "dashboards/$role.html"; done
           git diff --check HEAD^ HEAD || true

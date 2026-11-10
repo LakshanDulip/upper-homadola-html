@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#650f2a">
+  <meta name="description" content="Official website prototype for G/Upper Homadola School. Discover school news, academics and our learning community.">
+  <title>G/Upper Homadola School | Welcome</title>
+  <link rel="stylesheet" href="./css/style.css">
+  <script type="module" src="./js/main.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main" data-i18n="skip">ප්‍රධාන අන්තර්ගතයට යන්න</a>
+  <div class="topbar"><div class="container topbar-inner"><span data-i18n="topbar">G/Upper Homadola School · Sri Lanka</span><span class="topbar-right"><span class="status-dot"></span><span data-i18n="topbarRight">ඉගෙනීමට අලුත් දැක්මක්</span></span></div></div>
+  <header class="site-header" id="site-header">
+    <div class="container header-inner">
+      <a href="#home" class="brand" aria-label="G/Upper Homadola School home">
+        <span class="brand-emblem" aria-hidden="true">UH<span>✦</span></span>
+        <span class="brand-text"><strong>G/UPPER HOMADOLA</strong><small data-i18n="brandSmall">විද්‍යාලය · SRI LANKA</small></span>
+      </a>
+      <nav class="main-nav" id="main-nav" aria-label="Main navigation">
+        <a href="#home" data-nav="home" data-i18n="navHome">මුල් පිටුව</a>
+        <a href="#about" data-nav="about" data-i18n="navAbout">අප ගැන</a>
+        <a href="#academics" data-nav="academics" data-i18n="navAcademics">අධ්‍යාපන</a>
+        <a href="#news" data-nav="news" data-i18n="navNews">පුවත්</a>
+        <a href="#gallery" data-nav="gallery" data-i18n="navGallery">ගැලරිය</a>
+        <a href="#contact" data-nav="contact" data-i18n="navContact">සම්බන්ධ වන්න</a>
+      </nav>
+      <div class="header-actions">
+        <div class="language-switch" role="group" aria-label="Choose language"><button type="button" class="language-button active" data-lang="si" aria-pressed="true">සිං</button><span aria-hidden="true">/</span><button type="button" class="language-button" data-lang="en" aria-pressed="false">EN</button></div>
+        <a href="./login.html" class="button button-solid header-login"><span data-i18n="login">පිවිසෙන්න</span><span aria-hidden="true">↗</span></a>
+        <button type="button" class="menu-toggle" id="menu-toggle" aria-expanded="false" aria-controls="main-nav" aria-label="Open menu"><span></span><span></span><span></span></button>
+      </div>
+    </div>
+  </header>
+  <main id="main">
+    <section class="hero" id="home">
+      <div class="hero-grain" aria-hidden="true"></div>
+      <div class="container hero-grid">
+        <div class="hero-copy">
+          <div class="eyebrow light"><span class="eyebrow-line"></span><span data-i18n="heroKicker">හෙට දවස වෙනුවෙන් අද ඉගෙන ගනිමු</span></div>
+          <h1 data-i18n-html="heroTitle">දැනුමෙන් පිරිපුන්<br><em>අනාගතයක්</em> කරා.</h1>
+          <p class="hero-description" data-i18n="heroDescription">අධ්‍යාපනය, නිර්මාණශීලීත්වය සහ යහපත් වටිනාකම් තුළින් දරුවන්ගේ හැකියාවන් වර්ධනය කරමු.</p>
+          <div class="hero-actions"><a class="button button-white" href="#about"><span data-i18n="discover">අපේ පාසල හඳුනාගන්න</span><span aria-hidden="true">↗</span></a><a class="button button-ghost" href="#academics"><span data-i18n="exploreAcademics">අධ්‍යාපන අංශය</span><span aria-hidden="true">→</span></a></div>
+          <div class="hero-bottom"><span class="hero-line"></span><span data-i18n="heroFootnote">දැනුම · විනය · අනාගතය</span></div>
+        </div>
+        <div class="hero-art" aria-label="Abstract architectural illustration" role="img">
+          <div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div>
+          <div class="art-circle"></div><div class="art-disc"></div>
+          <div class="art-arch arch-back"></div><div class="art-arch arch-front"></div>
+          <div class="art-sun"></div><div class="art-rule"></div>
+          <div class="art-label"><span>EST.</span><strong>G/UPPER<br>HOMADOLA</strong><small>SCHOOL · SRI LANKA</small></div>
+          <div class="art-card"><span class="art-card-icon">✦</span><span data-i18n="artCard">ඉගෙනීමට ඉඩක්.<br>වර්ධනයට මගක්.</span></div>
+        </div>
+      </div>
+      <div class="hero-rail"><div class="container hero-rail-inner"><span data-i18n="heroRailLabel">පාසල් අධ්‍යාපන පරාසය</span><strong data-i18n="gradeRange">1 – 11 ශ්‍රේණි</strong><span class="hero-rail-separator"></span><span data-i18n="heroRailLabel2">අධ්‍යාපනයට කැපවුණු ගමනක්</span><a href="#academics" aria-label="Go to academics">↗</a></div></div>
+    </section>
+    <section class="welcome section-pad" id="about">
+      <div class="container welcome-grid">
+        <div class="welcome-visual" aria-hidden="true"><div class="welcome-visual-border"></div><div class="welcome-visual-inner"><span class="welcome-big-mark">G/<br>UH.</span><span class="welcome-art-text">LEARN<br>GROW<br>LEAD.</span></div><div class="welcome-stamp"><span>✦</span><small data-i18n="stampText">අපේ පාසල</small></div></div>
+        <div class="welcome-content"><div class="eyebrow"><span class="eyebrow-line"></span><span data-i18n="aboutKicker">අපගේ අනන්‍යතාව</span></div><h2 class="section-title" data-i18n-html="aboutTitle">දැනුමට පමණක් නොව,<br><em>ජීවිතයටත්</em> අධ්‍යාපනය.</h2><p class="section-lead" data-i18n="aboutDescription">G/Upper Homadola School වෙත ඔබ සාදරයෙන් පිළිගනිමු. දරුවන්ගේ ඉගෙනුම, හැකියාවන් සහ වටිනාකම් සඳහා වඩාත් යහපත් ඉගෙනුම් පරිසරයක් ගොඩනැගීම අපේ අරමුණයි.</p><p class="info-note" data-i18n="aboutNote">පාසලේ නිල ඉතිහාසය, දැක්ම සහ මෙහෙවර තහවුරු කර පසුව මෙහි පළ කරනු ලැබේ.</p><a href="#contact" class="text-link"><span data-i18n="moreAbout">වැඩි විස්තර සඳහා සම්බන්ධ වන්න</span><span aria-hidden="true">↗</span></a></div>
+      </div>
+    </section>
+    <section class="academics section-pad" id="academics">
+      <div class="container">
+        <div class="section-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span><span data-i18n="academicKicker">අධ්‍යාපන ගමන</span></div><h2 class="section-title" data-i18n-html="academicTitle">සෑම ශ්‍රේණියකටම<br><em>අලුත් හැකියාවන්.</em></h2></div><p data-i18n="academicDescription">1 ශ්‍රේණියේ සිට 11 ශ්‍රේණිය දක්වා ඉගෙනුම් පියවර සඳහා සැලසුම් කළ අපගේ අධ්‍යාපන අවකාශය.</p></div>
+        <div class="academic-cards">
+          <article class="academic-card"><div class="card-topline"><span>01 / 03</span><span class="card-icon">✳</span></div><div class="academic-card-body"><span class="card-grade" data-i18n="gradesPrimary">1 – 5 ශ්‍රේණි</span><h3 data-i18n="primaryTitle">ප්‍රාථමික අධ්‍යාපනය</h3><p data-i18n="primaryDesc">මූලික දැනුම, නිර්මාණශීලීත්වය සහ ඉගෙනීමට ආදරය කරන පුරුදු ගොඩනැගීම.</p></div><span class="card-arrow" aria-hidden="true">↗</span></article>
+          <article class="academic-card"><div class="card-topline"><span>02 / 03</span><span class="card-icon">◇</span></div><div class="academic-card-body"><span class="card-grade" data-i18n="gradesJunior">6 – 9 ශ්‍රේණි</span><h3 data-i18n="juniorTitle">කනිෂ්ඨ ද්විතීයික</h3><p data-i18n="juniorDesc">විෂය දැනුම පුළුල් කරමින් ප්‍රායෝගික කුසලතා සහ සහයෝගීතාවය වර්ධනය කිරීම.</p></div><span class="card-arrow" aria-hidden="true">↗</span></article>
+          <article class="academic-card"><div class="card-topline"><span>03 / 03</span><span class="card-icon">↗</span></div><div class="academic-card-body"><span class="card-grade" data-i18n="gradesSenior">10 – 11 ශ්‍රේණි</span><h3 data-i18n="seniorTitle">ජ්‍යෙෂ්ඨ ද්විතීයික</h3><p data-i18n="seniorDesc">විභාග සූදානම, වගකීම සහ අනාගත අධ්‍යාපන අවස්ථා සඳහා මගපෙන්වීම.</p></div><span class="card-arrow" aria-hidden="true">↗</span></article>
+        </div>
+        <div class="academic-note"><span class="info-symbol">i</span><p data-i18n="academicNote">විෂයයන්, කාලසටහන් සහ පාසල් නිවේදන පරිපාලන පද්ධතිය ක්‍රියාත්මක වූ පසු මෙහි ප්‍රකාශයට පත් කෙරේ.</p></div>
+      </div>
+    </section>
+    <section class="feature-band"><div class="container feature-grid"><div class="feature-intro"><div class="eyebrow light"><span class="eyebrow-line"></span><span data-i18n="digitalKicker">ඩිජිටල් අධ්‍යාපනය</span></div><h2 data-i18n-html="digitalTitle">එකට එක්ව<br><em>ඉදිරියට.</em></h2><p data-i18n="digitalDesc">සිසුන්, ගුරුවරුන් සහ පාසල් පරිපාලනය සඳහා සූදානම් වන ඒකාබද්ධ ඩිජිටල් පද්ධතිය.</p></div><div class="feature-list"><div><span>01</span><strong data-i18n="digitalStudent">ශිෂ්‍ය අවකාශය</strong><small data-i18n="digitalStudentDesc">පාඩම්, ගෙදර වැඩ සහ ප්‍රතිඵල</small></div><div><span>02</span><strong data-i18n="digitalTeacher">ගුරු අවකාශය</strong><small data-i18n="digitalTeacherDesc">ඉගැන්වීම් හා අධ්‍යාපන කළමනාකරණය</small></div><div><span>03</span><strong data-i18n="digitalAdmin">පරිපාලන අවකාශය</strong><small data-i18n="digitalAdminDesc">ආරක්ෂිත පාසල් කළමනාකරණය</small></div><a href="./login.html" class="feature-link"><span data-i18n="portalLink">School Portal වෙත</span> ↗</a></div></div></section>
+    <section class="news section-pad" id="news"><div class="container"><div class="section-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span><span data-i18n="newsKicker">නවතම තොරතුරු</span></div><h2 class="section-title" data-i18n-html="newsTitle">අපේ පාසලේ<br><em>පුවත් සහ සිදුවීම්.</em></h2></div></div><div class="empty-editorial"><div class="empty-icon">✳</div><div><h3 data-i18n="newsEmptyTitle">නිල නිවේදන ඉදිරියේදී</h3><p data-i18n="newsEmptyDesc">තහවුරු කළ පුවත් සහ සිදුවීම් පාසල් පරිපාලනය විසින් මෙහි පළ කරනු ලැබේ.</p></div><span class="empty-no">01 — NEWS</span></div></div></section>
+    <section class="gallery section-pad" id="gallery"><div class="container gallery-grid"><div><div class="eyebrow"><span class="eyebrow-line"></span><span data-i18n="galleryKicker">පාසල් ජීවිතය</span></div><h2 class="section-title" data-i18n-html="galleryTitle">මතකයන්ට<br><em>ඉඩක්.</em></h2><p class="section-lead" data-i18n="galleryDescription">අනුමත පාසල් ඡායාරූප සහ උත්සව අවස්ථා ඉදිරියේදී මෙම ගැලරියට එක් කෙරේ.</p><p class="info-note" data-i18n="galleryNote">ශිෂ්‍ය පෞද්ගලික ඡායාරූප මෙහි ස්වයංක්‍රීයව පළ නොකෙරේ.</p></div><div class="gallery-placeholder"><div class="gallery-symbol">✧</div><span data-i18n="galleryPlaceholder">නිල ඡායාරූප සඳහා ඉඩ වෙන් කර ඇත</span><small>G/UPPER HOMADOLA · GALLERY</small></div></div></section>
+    <section class="contact section-pad" id="contact"><div class="container contact-grid"><div><div class="eyebrow light"><span class="eyebrow-line"></span><span data-i18n="contactKicker">අප හා සම්බන්ධ වන්න</span></div><h2 class="section-title" data-i18n-html="contactTitle">අපිත් සමඟ<br><em>සම්බන්ධ වන්න.</em></h2><p data-i18n="contactDescription">නිල සම්බන්ධතා තොරතුරු තහවුරු වූ පසු මෙහි පළ කරනු ලැබේ.</p></div><div class="contact-panel"><div class="contact-row"><span data-i18n="contactSchool">පාසල</span><strong>G/Upper Homadola School</strong></div><div class="contact-row"><span data-i18n="contactRegion">රට</span><strong>Sri Lanka</strong></div><div class="contact-row"><span data-i18n="contactDetails">දුරකථන / ලිපිනය</span><strong data-i18n="notPublished">තවම ප්‍රකාශයට පත් කර නොමැත</strong></div><a class="contact-cta" href="./login.html"><span data-i18n="loginPortal">School Portal</span><span>↗</span></a></div></div></section>
+  </main>
+  <footer class="footer"><div class="container footer-main"><div><div class="footer-brand">G/UPPER HOMADOLA <span>✦</span></div><p data-i18n="footerTag">දැනුමෙන් ශක්තිමත් අනාගතයක් වෙනුවෙන්.</p></div><div class="footer-links"><a href="#home" data-i18n="navHome">මුල් පිටුව</a><a href="#academics" data-i18n="navAcademics">අධ්‍යාපන</a><a href="#contact" data-i18n="navContact">සම්බන්ධ වන්න</a><a href="./login.html" data-i18n="login">පිවිසෙන්න</a></div></div><div class="container footer-bottom"><span>© <span id="year"></span> G/Upper Homadola School. <span data-i18n="rights">සියලු හිමිකම් ඇවිරිණි.</span></span><span class="credit">Developed by Lakshan</span></div></footer>
+  <button id="scroll-top" class="scroll-top" type="button" aria-label="Back to top">↑</button>
+</body>
+</html>

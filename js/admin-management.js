@@ -13,7 +13,7 @@ const copy={
  studentIntro:'ඇතුළත් වීමේ අංකය, ශ්‍රේණිය සහ ශිෂ්‍ය ගිණුම් ආරක්ෂිතව කළමනාකරණය කරන්න.',
  teacherIntro:'ස්වයංක්‍රීය Teacher ID, විෂයයන් සහ පවරා ඇති ශ්‍රේණි කළමනාකරණය කරන්න.',
  addStudent:'නව ශිෂ්‍ය ගිණුම',addTeacher:'නව ගුරු ගිණුම',name:'සම්පූර්ණ නම',admission:'ස්ථිර ඇතුළත් වීමේ අංකය',grade:'ශ්‍රේණිය',
- tempPassword:'ආරම්භක මුරපදය',passwordHelp:'අවම අකුරු 12ක්. ගිණුම සකස් වූ පසු Password එක නැවත පෙන්වන්නේ නැහැ.',
+ tempPassword:'ආරම්භක මුරපදය',passwordHelp:'ශිෂ්‍යයාගේ අංකය Password ලෙස භාවිත නොකරන්න. ශක්තිමත් තාවකාලික Password එකක් සාදා, ශිෂ්‍යයාට ආරක්ෂිතව ලබා දෙන්න. පළමු පිවිසුමෙන් පසු වෙනස් කරන්න.',generatePassword:'ආරක්ෂිත Password එකක් සාදන්න',copyPassword:'Password Copy කරන්න',passwordCopied:'Password Copy කළා. ආරක්ෂිතව ශිෂ්‍යයාට ලබා දෙන්න.',noPassword:'මුලින් Password එකක් Generate කරන්න.',
  saveStudent:'ශිෂ්‍ය ගිණුම සාදන්න',saveTeacher:'ගුරු ගිණුම සාදන්න',saveChanges:'වෙනස්කම් සුරකින්න',
  subjects:'විෂයයන් (කොමා වලින් වෙන් කරන්න)',assignedGrades:'පවරා ඇති ශ්‍රේණි (උදා: 6,7,8)',
  autoId:'Teacher ID එක පද්ධතියෙන් ස්වයංක්‍රීයව ලබා දෙනවා.',list:'ගිණුම් ලැයිස්තුව',search:'නම හෝ ID අනුව සොයන්න',
@@ -30,7 +30,7 @@ const copy={
  en:{
  students:'Student management',teachers:'Teacher management',studentIntro:'Securely manage permanent admission numbers, grades and student accounts.',teacherIntro:'Manage automatically assigned teacher IDs, subjects and teaching grades.',
  addStudent:'New student account',addTeacher:'New teacher account',name:'Full name',admission:'Permanent admission number',grade:'Grade',
- tempPassword:'Initial password',passwordHelp:'At least 12 characters. Passwords cannot be viewed again after creation.',
+ tempPassword:'Initial password',passwordHelp:'Never use the admission number as a password. Generate a strong temporary password, deliver it privately, and change it after first sign-in.',generatePassword:'Generate secure password',copyPassword:'Copy password',passwordCopied:'Password copied. Share privately with the student.',noPassword:'Generate a password first.',
  saveStudent:'Create student account',saveTeacher:'Create teacher account',saveChanges:'Save changes',
  subjects:'Subjects (comma-separated)',assignedGrades:'Assigned grades (e.g. 6,7,8)',
  autoId:'A unique teacher ID will be generated automatically.',list:'Account directory',search:'Search by name or school ID',
@@ -62,6 +62,25 @@ function language(){
  for(const element of document.querySelectorAll('[data-manage-placeholder]'))element.placeholder=t(element.dataset.managePlaceholder);
  for(const role of ['student','teacher'])render(role);
 }
+/**
+ * Generates a 20-character temporary password using CSPRNG; no persistence
+ * in GitHub, browser storage or Firestore. 64-character alphabet allows unbiased
+ * selection by masking 6 random bits.
+ */
+function secureTemporaryPassword(){
+ const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789-_@!';
+ // Alphabet length is not a power of two: use rejection sampling to avoid bias.
+ const bytes=new Uint8Array(48);let result='';
+ while(result.length<20){
+  crypto.getRandomValues(bytes);
+  for(const value of bytes){
+   if(value>=Math.floor(256/alphabet.length)*alphabet.length)continue;
+   result+=alphabet[value%alphabet.length];
+   if(result.length===20)break;
+  }
+ }
+ return result;
+}
 function parseComma(input){return input.split(',').map(s=>s.trim()).filter(Boolean)}
 function recordForm(role){return el(role+'-form')}
 function editRecord(role,account){
@@ -89,6 +108,7 @@ function resetForm(role){
  el(role+'-form-title').textContent=t(role==='student'?'addStudent':'addTeacher');
  el(role+'-submit').textContent=t(role==='student'?'saveStudent':'saveTeacher');
  el(role+'-cancel').hidden=true;
+ if(role==='student')el('student-copy-password').hidden=true;
 }
 function render(role){
  const rows=el(role+'-rows');if(!rows)return;rows.replaceChildren();
@@ -151,6 +171,7 @@ async function save(role,event){
  if(!body.displayName||(!editing&&body.password.length<12)||role==='student'&&(!Number.isInteger(body.grade)||body.grade<1||body.grade>11)||role==='teacher'&&body.assignedGrades.some(g=>!Number.isInteger(g)||g<1||g>11)){
   notice(role,t('validation'),'error');return;
  }
+ if(role==='student'&&!editing&&body.password.toLowerCase()===body.admissionNumber.toLowerCase()){notice(role,t('passwordHelp'),'error');return}
  button.disabled=true;
  try{
   const response=await request(editing?'/api/accounts/'+encodeURIComponent(form.elements.uid.value):'/api/accounts',{
@@ -172,6 +193,20 @@ export function initAdminManagement(){
   el(role+'-search').addEventListener('input',()=>render(role));
   el(role+'-refresh').addEventListener('click',()=>load(role));
   if(role==='student'){
+   const generate=el('student-generate-password');
+   const copy=el('student-copy-password');
+   generate.addEventListener('click',()=>{
+    form.elements.password.value=secureTemporaryPassword();
+    copy.hidden=false;
+    notice(role,t('passwordHelp'));
+   });
+   copy.addEventListener('click',async()=>{
+    const password=form.elements.password.value;
+    if(!password){notice(role,t('noPassword'),'error');return}
+    try{await navigator.clipboard.writeText(password);notice(role,t('passwordCopied'),'success')}
+    catch{notice(role,t('failed'),'error')}
+   });
+   form.elements.password.addEventListener('input',()=>{copy.hidden=!form.elements.password.value});
    const options=el('student-grade');
    for(let grade=1;grade<=11;grade++){const option=document.createElement('option');option.value=String(grade);option.textContent=String(grade);options.append(option)}
   }

@@ -1,0 +1,19 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function validRole() {
+      return request.auth != null
+        && request.auth.token.schoolAccess == true
+        && request.auth.token.role in ['student','teacher','admin','principal','superadmin','developer'];
+    }
+    // Clients may only fetch their own minimal status profile.
+    // Role and active state are maintained by trusted administrators.
+    match /users/{uid} {
+      allow get: if validRole() && request.auth.uid == uid;
+      allow list, create, update, delete: if false;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

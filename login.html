@@ -1,7 +1,23 @@
 <!DOCTYPE html>
-<html lang="si">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#650f2a"><title>School Portal | G/Upper Homadola</title><link rel="stylesheet" href="./css/style.css"><script type="module" src="./js/main.js"></script></head>
-<body class="portal-body"><a class="skip-link" href="#main" data-i18n="skip">ප්‍රධාන අන්තර්ගතයට යන්න</a>
-<header class="portal-header container"><a href="./index.html" class="brand dark-brand"><span class="brand-emblem" aria-hidden="true">UH<span>✦</span></span><span class="brand-text"><strong>G/UPPER HOMADOLA</strong><small data-i18n="brandSmall">විද්‍යාලය · SRI LANKA</small></span></a><div class="language-switch" role="group" aria-label="Choose language"><button type="button" class="language-button active" data-lang="si" aria-pressed="true">සිං</button><span aria-hidden="true">/</span><button type="button" class="language-button" data-lang="en" aria-pressed="false">EN</button></div></header>
-<main class="portal-main" id="main"><section class="portal-card"><span class="portal-icon" aria-hidden="true">✦</span><div class="eyebrow"><span class="eyebrow-line"></span><span data-i18n="portalKicker">පාසල් කළමනාකරණ පද්ධතිය</span></div><h1 data-i18n="portalTitle">School Portal</h1><p data-i18n="portalComing">ශිෂ්‍ය, ගුරු සහ පරිපාලන පිවිසුම් පද්ධතිය ඊළඟ සංවර්ධන අදියරේදී ආරක්ෂිතව සම්බන්ධ කරනු ලැබේ.</p><div class="portal-notice"><span>ⓘ</span><span data-i18n="portalSecurity">මෙම පිටුව තවම login නොකරයි. මුරපද ඇතුළත් නොකරන්න.</span></div><a class="button button-solid" href="./index.html"><span data-i18n="backHome">මුල් පිටුවට</span> <span aria-hidden="true">↗</span></a></section></main><footer class="portal-footer"><span>© <span id="year"></span> G/Upper Homadola School</span><span>Developed by Lakshan</span></footer>
+<html lang="si"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#650f2a"><meta name="description" content="Secure school portal for G/Upper Homadola School.">
+<title>School Portal | G/Upper Homadola School</title>
+<link rel="stylesheet" href="./css/style.css"><link rel="stylesheet" href="./css/auth.css">
+<script type="module" src="./js/login.js"></script></head>
+<body class="auth-body">
+<a class="skip-link" href="#main">ප්‍රධාන අන්තර්ගතයට යන්න</a>
+<header class="auth-header"><a class="auth-brand" href="./index.html"><span class="auth-logo">UH<span>✦</span></span><span><strong>G/UPPER HOMADOLA</strong><small>SCHOOL MANAGEMENT SYSTEM</small></span></a>
+<div class="language-switch" role="group" aria-label="Language"><button type="button" data-lang="si" class="language-button active" aria-pressed="true">සිං</button><span>/</span><button type="button" data-lang="en" class="language-button" aria-pressed="false">EN</button></div></header>
+<main class="auth-layout" id="main">
+<section class="auth-intro" aria-label="School portal introduction"><div class="auth-decor">✦</div><div class="auth-intro-content"><span class="auth-kicker" data-auth-i18n="kicker">පාසල් ඩිජිටල් අවකාශය</span><h1 data-auth-i18n="introTitle">අපේ ඉගෙනුම්<br><em>ගමනට එකම තැනක්.</em></h1><p data-auth-i18n="introDesc">සිසුන්, ගුරුවරුන් සහ පාසල් පරිපාලනය සඳහා සකස් කළ ආරක්ෂිත පිවිසුම.</p><div class="auth-roles"><span data-auth-i18n="roleStudent">ශිෂ්‍ය</span><span data-auth-i18n="roleTeacher">ගුරු</span><span data-auth-i18n="roleAdmin">පරිපාලන</span></div></div><div class="auth-intro-foot">G/UPPER HOMADOLA · SRI LANKA</div></section>
+<section class="auth-form-panel"><div class="auth-form-card"><div class="auth-form-eyebrow" data-auth-i18n="welcome">ඔබව සාදරයෙන් පිළිගනිමු</div><h2 data-auth-i18n="signInTitle">ඔබේ ගිණුමට පිවිසෙන්න</h2><p class="auth-subtitle" data-auth-i18n="signInDesc">ඔබේ පාසල් අංකය හෝ Username සහ Password ඇතුළත් කරන්න.</p>
+<div class="auth-error" id="login-error" role="alert" hidden></div>
+<form id="login-form" novalidate><div class="auth-field"><label for="username" data-auth-i18n="usernameLabel">Username / ඇතුළත් වීමේ අංකය</label><input id="username" name="username" type="text" autocomplete="username" inputmode="text" required maxlength="80" placeholder="admin / TCH-0001 / 1052"></div>
+<div class="auth-field"><div class="field-heading"><label for="password" data-auth-i18n="passwordLabel">මුරපදය</label></div><div class="password-wrap"><input id="password" name="password" type="password" autocomplete="current-password" required minlength="1" placeholder="••••••••••••"><button class="show-password" type="button" data-toggle-password="password" data-auth-i18n="show">පෙන්වන්න</button></div></div>
+<button id="login-submit" class="auth-submit" type="submit"><span data-auth-i18n="signIn">ආරක්ෂිතව පිවිසෙන්න</span><span aria-hidden="true">↗</span></button></form>
+<p class="auth-helper" data-auth-i18n="noRegistration">නව ගිණුම් පාසල් පරිපාලනය විසින් පමණක් සකස් කරනු ලැබේ. මුරපදය අමතක නම් පාසල් පරිපාලක අමතන්න.</p>
+<div class="auth-divider"></div><a class="auth-back" href="./index.html"><span aria-hidden="true">←</span> <span data-auth-i18n="back">පාසල් වෙබ් අඩවියට</span></a>
+</div></section>
+</main>
+<footer class="auth-footer"><span>© <span id="year"></span> G/Upper Homadola School</span><span>Developed by Lakshan</span></footer>
 </body></html>

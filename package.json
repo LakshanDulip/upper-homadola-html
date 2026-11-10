@@ -1,0 +1,13 @@
+{
+  "name": "upper-homadola-html",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "serve": "python -m http.server 8080",
+    "check": "node --check js/auth.js && node --check js/login.js && node --check js/dashboard.js && node --check js/auth-i18n.js && node --check scripts/bootstrap-existing-admin.mjs"
+  },
+  "devDependencies": {
+    "firebase-admin": "^13.4.0"
+  }
+}

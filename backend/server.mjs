@@ -8,6 +8,7 @@
  * and matching active Firestore profile. This is NOT a public sign-up API.
  */
 import { createServer } from 'node:http';
+import { randomBytes } from 'node:crypto';
 import { initializeApp, applicationDefault } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
@@ -53,8 +54,10 @@ function validateCreate(body,role){
   if(!validGrade(body.grade))fail(400,'Choose a grade from 1 to 11');
   return {displayName,password,username:admissionNumber,grade:body.grade};
  }
+ const nic=String(body.nic||'').trim().toUpperCase();
+ if(!/^(?:[0-9]{9}[VX]|[0-9]{12})$/.test(nic))fail(400,'Valid teacher NIC is required');
  if(!validSubjects(body.subjects||[])||!validGrades(body.assignedGrades||[]))fail(400,'Invalid subject or assigned grade list');
- return {displayName,password,subjects:[...new Set(body.subjects||[])],assignedGrades:body.assignedGrades||[]};
+ return {displayName,password,nic,subjects:[...new Set(body.subjects||[])],assignedGrades:body.assignedGrades||[]};
 }
 function sanitizeProfile(doc){
  const x=doc.data();
@@ -62,7 +65,7 @@ function sanitizeProfile(doc){
   uid:doc.id,username:x.username||'',displayName:x.displayName||'',
   role:x.role,active:x.active===true,
   ...(x.role==='student'?{grade:x.grade??null}:{}),
-  ...(x.role==='teacher'?{subjects:x.subjects||[],assignedGrades:x.assignedGrades||[]}:{}),
+  ...(x.role==='teacher'?{teacherId:x.teacherId||null,subjects:x.subjects||[],assignedGrades:x.assignedGrades||[]}:{}),
  };
 }
 async function authenticatedAdmin(req){
@@ -98,7 +101,8 @@ async function allocateTeacherId(){
 }
 async function createAccount(role,body,actor){
  const input=validateCreate(body,role);
- const username=role==='teacher'?await allocateTeacherId():input.username;
+ const teacherId=role==='teacher'?await allocateTeacherId():null;
+ const username=role==='teacher'?input.nic.toLowerCase():input.username;
  const normalized=username.toLowerCase();
  if(!usernamePattern.test(normalized))fail(400,'Invalid school username');
  const email='u-'+normalized+'@accounts.upperhomadola.school';
@@ -118,7 +122,7 @@ async function createAccount(role,body,actor){
    tx.create(reservation,{uid:user.uid,createdBy:actor,createdAt:FieldValue.serverTimestamp()});
    tx.create(profile,{
     username,role,displayName:input.displayName,active:false,
-    ...(role==='student'?{grade:input.grade}:{subjects:input.subjects,assignedGrades:input.assignedGrades}),
+    ...(role==='student'?{grade:input.grade}:{teacherId,subjects:input.subjects,assignedGrades:input.assignedGrades}),
     createdAt:FieldValue.serverTimestamp(),createdBy:actor,createdVia:'trusted-admin-api'
    });
    tx.create(audit,{action:'account.provision.requested',actorUid:actor,targetUid:user.uid,targetRole:role,at:FieldValue.serverTimestamp()});
@@ -171,6 +175,28 @@ async function updateAccount(uid,body,actor){
  });
  return {success:true};
 }
+function temporaryTeacherPassword(){
+ const chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+ const output=[];
+ while(output.length<16){
+  const random=randomBytes(24);
+  for(const byte of random){
+   if(byte>=Math.floor(256/chars.length)*chars.length)continue;
+   output.push(chars[byte%chars.length]);
+   if(output.length===16)break;
+  }
+ }
+ return output.join('');
+}
+async function resetTeacherPassword(uid,actor){
+ const target=await getTarget(uid);
+ if(target.get('role')!=='teacher')fail(403,'Only teacher passwords can be reset here');
+ const password=temporaryTeacherPassword();
+ await auth.updateUser(uid,{password});
+ await auth.revokeRefreshTokens(uid);
+ await db.collection('auditLogs').add({action:'teacher.password.reset',actorUid:actor,targetUid:uid,targetRole:'teacher',at:FieldValue.serverTimestamp()});
+ return {temporaryPassword:password};
+}
 async function changeStatus(uid,body,actor){
  const target=await getTarget(uid);
  if(typeof body?.active!=='boolean')fail(400,'Provide an active status');
@@ -212,6 +238,8 @@ createServer(async(req,res)=>{
    if(!roles.has(body?.role))fail(400,'Only student or teacher accounts may be provisioned');
    return json(res,201,await createAccount(body.role,body,actor),origin);
   }
+  const reset=url.pathname.match(/^\/api\/accounts\/([a-zA-Z0-9_-]{1,128})\/reset-password$/);
+  if(reset&&req.method==='POST')return json(res,200,await resetTeacherPassword(reset[1],actor),origin);
   const match=url.pathname.match(/^\/api\/accounts\/([a-zA-Z0-9_-]{1,128})(\/status)?$/);
   if(match&&req.method==='PATCH'){
    const body=await readBody(req);

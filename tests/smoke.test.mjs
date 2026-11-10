@@ -45,6 +45,12 @@ test('backend requires trusted admin claims and profile, with no public role sel
  assert.match(backend,/actor\.get\('active'\)!==true/);
  assert.match(backend,/!roles\.has\(body\?\.role\)/);
 });
+test('teacher NIC login and admin-only teacher password reset wired',()=>{
+ assert.match(admin,/id="teacher-nic"/);
+ assert.match(management,/resetTeacherPassword/);
+ assert.match(backend,/teacher\.password\.reset/);
+ assert.match(backend,/Valid teacher NIC is required/);
+});
 test('Firestore rules deny all client writes and profile lists',()=>{
  const rules=read('firestore.rules');
  assert.match(rules,/allow list, create, update, delete: if false/);

@@ -136,8 +136,9 @@ function validate(body,role,editing=false){
   }
   return {displayName,grade:body.grade,...(!editing?{username,password:body.password}:{})};
  }
+ if(!editing&& !/^(?:[0-9]{9}[VX]|[0-9]{12})$/.test(String(body.nic||'').trim().toUpperCase()))err(400,'Valid teacher NIC required');
  if(!validSubjects(body.subjects||[])||!validGrades(body.assignedGrades||[]))err(400,'Invalid subject or grade assignment');
- return {displayName,subjects:[...new Set(body.subjects||[])],assignedGrades:body.assignedGrades||[],...(!editing?{password:body.password}:{})};
+ return {displayName,subjects:[...new Set(body.subjects||[])],assignedGrades:body.assignedGrades||[],...(!editing?{nic:body.nic.trim().toUpperCase(),password:body.password}:{})};
 }
 async function firebaseJwks(){
  if(cachedJwks&&Date.now()<jwksExpiresAt)return cachedJwks;
@@ -189,8 +190,8 @@ async function listAccounts(env,role){
  });
  if(!Array.isArray(result))err(502,'Invalid Firestore query response');
  const accounts=result.filter(x=>x.document).map(x=>{
-  const {uid,username,displayName,role,active,grade,subjects,assignedGrades}=fromDoc(x.document);
-  return {uid,username,displayName,role,active:active===true,...(role==='student'?{grade:grade??null}:{subjects:subjects||[],assignedGrades:assignedGrades||[]})};
+  const {uid,username,displayName,role,active,grade,teacherId,subjects,assignedGrades}=fromDoc(x.document);
+  return {uid,username,displayName,role,active:active===true,...(role==='student'?{grade:grade??null}:{teacherId:teacherId||null,subjects:subjects||[],assignedGrades:assignedGrades||[]})};
  }).sort((a,b)=>a.username.localeCompare(b.username));
  return {accounts,limit:100,moreMayExist:accounts.length===100};
 }
@@ -220,14 +221,15 @@ async function allocateTeacherId(env){
 }
 async function createAccount(env,body,role,actor){
  const input=validate(body,role);
- const username=role==='student'?input.username:await allocateTeacherId(env);
+ const teacherId=role==='teacher'?await allocateTeacherId(env):null;
+ const username=role==='student'?input.username:input.nic.toLowerCase();
  const email='u-'+username+'@accounts.upperhomadola.school';
  // Firebase Admin Identity Toolkit REST create endpoint (not client signUp).
  const response=await adminJson(env,authUrl(env,''),'POST',{email,password:input.password,displayName:input.displayName,disabled:true,emailVerified:false});
  const uid=response.localId||response.uid;
  if(!uid)err(502,'Auth did not return account ID. Inspect Firebase for reconciliation');
  const fields={username,role,displayName:input.displayName,active:false,createdBy:actor,createdAt:new Date().toISOString(),createdVia:'cloudflare-worker',
-  ...(role==='student'?{grade:input.grade}:{subjects:input.subjects,assignedGrades:input.assignedGrades})};
+  ...(role==='student'?{grade:input.grade}:{teacherId,subjects:input.subjects,assignedGrades:input.assignedGrades})};
  try{
   await commit(env,[
    {update:{name:docPath(env,'loginNames/'+username),fields:toFields({uid,createdBy:actor,createdAt:new Date().toISOString()})},currentDocument:{exists:false}},
@@ -258,6 +260,27 @@ async function updateAccount(env,uid,body,actor){
   auditWrite(env,actor,uid,target.role,'account.profile.updated')
  ]);
  return {success:true};
+}
+function newTeacherPassword(){
+ const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789',output=[];
+ const cutoff=Math.floor(256/alphabet.length)*alphabet.length;
+ while(output.length<16){
+  const random=crypto.getRandomValues(new Uint8Array(24));
+  for(const b of random){
+   if(b>=cutoff)continue;
+   output.push(alphabet[b%alphabet.length]);
+   if(output.length===16)break;
+  }
+ }
+ return output.join('');
+}
+async function resetTeacherPassword(env,uid,actor){
+ const target=await targetAccount(env,uid);
+ if(target.role!=='teacher')err(403,'Only teacher passwords can be reset here');
+ const password=newTeacherPassword();
+ await adminJson(env,authUrl(env,':update'),'POST',{localId:uid,password});
+ await commit(env,[auditWrite(env,actor,uid,'teacher','teacher.password.reset')]);
+ return {temporaryPassword:password};
 }
 async function changeStatus(env,uid,body,actor){
  const target=await targetAccount(env,uid);
@@ -319,6 +342,8 @@ export default {
     if(!roles.has(body?.role))err(400,'Only student and teacher roles may be provisioned');
     return responseJson(env,request,await createAccount(env,body,body.role,actor),201);
    }
+   const reset=u.pathname.match(/^\/api\/accounts\/([A-Za-z0-9_-]{1,128})\/reset-password$/);
+   if(reset&&request.method==='POST')return responseJson(env,request,await resetTeacherPassword(env,reset[1],actor));
    const match=u.pathname.match(/^\/api\/accounts\/([A-Za-z0-9_-]{1,128})(\/status)?$/);
    if(match&&request.method==='PATCH'){
     const body=await parseBody(request);

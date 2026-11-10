@@ -12,7 +12,7 @@ const copy={
  students:'ශිෂ්‍ය කළමනාකරණය',teachers:'ගුරු කළමනාකරණය',
  studentIntro:'ඇතුළත් වීමේ අංකය, ශ්‍රේණිය සහ ශිෂ්‍ය ගිණුම් ආරක්ෂිතව කළමනාකරණය කරන්න.',
  teacherIntro:'ස්වයංක්‍රීය Teacher ID, විෂයයන් සහ පවරා ඇති ශ්‍රේණි කළමනාකරණය කරන්න.',
- addStudent:'නව ශිෂ්‍ය ගිණුම',addTeacher:'නව ගුරු ගිණුම',name:'සම්පූර්ණ නම',admission:'ස්ථිර ඇතුළත් වීමේ අංකය',grade:'ශ්‍රේණිය',
+ addStudent:'නව ශිෂ්‍ය ගිණුම',addTeacher:'නව ගුරු ගිණුම',nic:'ගුරු Login NIC අංකය',resetTeacherPassword:'Password Reset',resetConfirm:'මෙම ගුරුවරයාගේ Password Reset කරන්නද? අලුත් Password එක එක් වරක් පමණක් පෙන්වයි.',resetSuccess:'අලුත් Password එක (එක් වරක් පමණයි): ',resetAlert:'මෙම Password එක ආරක්ෂිතව ගුරුවරයාට ලබා දෙන්න. පැරණි Password එක නැවත බැලීමට නොහැක.',name:'සම්පූර්ණ නම',admission:'ස්ථිර ඇතුළත් වීමේ අංකය',grade:'ශ්‍රේණිය',
  tempPassword:'ආරම්භක මුරපදය',passwordHelp:'මුල් Password එක ඉංග්‍රීසි ලොකු අකුරු 2ක් + ඉලක්කම් 4ක් (උදා: AA2401). Password ගිණුම සාදන විට පමණක් පෙන්වයි; GitHub/Firestore තුළ සුරැකෙන්නේ නැහැ.',generatePassword:'Password ස්වයංක්‍රීයව සාදන්න',showPassword:'Password පෙන්වන්න',hidePassword:'Password සඟවන්න',
  saveStudent:'ශිෂ්‍ය ගිණුම සාදන්න',saveTeacher:'ගුරු ගිණුම සාදන්න',saveChanges:'වෙනස්කම් සුරකින්න',
  subjects:'විෂයයන් (කොමා වලින් වෙන් කරන්න)',assignedGrades:'පවරා ඇති ශ්‍රේණි (උදා: 6,7,8)',
@@ -29,7 +29,7 @@ const copy={
  },
  en:{
  students:'Student management',teachers:'Teacher management',studentIntro:'Securely manage permanent admission numbers, grades and student accounts.',teacherIntro:'Manage automatically assigned teacher IDs, subjects and teaching grades.',
- addStudent:'New student account',addTeacher:'New teacher account',name:'Full name',admission:'Permanent admission number',grade:'Grade',
+ addStudent:'New student account',addTeacher:'New teacher account',nic:'Teacher login NIC number',resetTeacherPassword:'Reset password',resetConfirm:'Reset this teacher’s password? A new password will be shown once.',resetSuccess:'New password (shown once): ',resetAlert:'Give this password privately to the teacher. Existing passwords cannot be viewed.',name:'Full name',admission:'Permanent admission number',grade:'Grade',
  tempPassword:'Initial password',passwordHelp:'Initial password: 2 uppercase English letters + 4 digits (e.g. AA2401). Share privately; never stored in GitHub or Firestore.',generatePassword:'Generate password',showPassword:'Show password',hidePassword:'Hide password',
  saveStudent:'Create student account',saveTeacher:'Create teacher account',saveChanges:'Save changes',
  subjects:'Subjects (comma-separated)',assignedGrades:'Assigned grades (e.g. 6,7,8)',
@@ -105,6 +105,9 @@ function editRecord(role,account){
   form.elements.grade.value=String(account.grade??'');
   form.elements.admissionNumber.readOnly=true;
  }else{
+  form.elements.nic.value=account.username;
+  form.elements.nic.readOnly=true;
+  form.elements.nic.required=false;
   form.elements.subjects.value=(account.subjects||[]).join(', ');
   form.elements.assignedGrades.value=(account.assignedGrades||[]).join(', ');
  }
@@ -119,6 +122,7 @@ function editRecord(role,account){
 function resetForm(role){
  const form=recordForm(role);form.reset();form.elements.uid.value='';
  if(role==='student')form.elements.admissionNumber.readOnly=false;
+ if(role==='teacher'){form.elements.nic.readOnly=false;form.elements.nic.required=true}
  el(role+'-password-field').hidden=false;form.elements.password.required=true;
  el(role+'-form-title').textContent=t(role==='student'?'addStudent':'addTeacher');
  el(role+'-submit').textContent=t(role==='student'?'saveStudent':'saveTeacher');
@@ -153,7 +157,23 @@ function render(role){
    }catch(err){notice(role,err.message||t('failed'),'error')}
    finally{toggle.disabled=false}
   });
-  actions.append(edit,toggle);row.append(actions);rows.append(row);
+  actions.append(edit,toggle);
+  if(role==='teacher'){
+   const reset=createNode('button','mgmt-action',t('resetTeacherPassword'));reset.type='button';
+   reset.addEventListener('click',async()=>{
+    if(!confirm(t('resetConfirm')+'\n'+account.displayName))return;
+    reset.disabled=true;
+    try{
+     const result=await request('/api/accounts/'+encodeURIComponent(account.uid)+'/reset-password',{method:'POST',body:{}});
+     // One-time presentation; never log, cache or persist the new secret.
+     alert(t('resetSuccess')+result.temporaryPassword+'\n'+t('resetAlert'));
+     notice(role,t('resetAlert'),'success');
+    }catch(error){notice(role,error.message||t('failed'),'error')}
+    finally{reset.disabled=false}
+   });
+   actions.append(reset);
+  }
+  row.append(actions);rows.append(row);
  }
 }
 async function request(path,{method='GET',body}={}){
@@ -186,10 +206,12 @@ async function save(role,event){
   body.grade=Number(form.elements.grade.value);
   if(!editing)body.admissionNumber=form.elements.admissionNumber.value.trim();
  }else{
+  if(!editing)body.nic=form.elements.nic.value.trim().toUpperCase();
   body.subjects=parseComma(form.elements.subjects.value);
   body.assignedGrades=parseComma(form.elements.assignedGrades.value).map(Number);
  }
  if(!editing)body.password=form.elements.password.value;
+ if(role==='teacher'&&!editing&&!/^(?:[0-9]{9}[VX]|[0-9]{12})$/.test(body.nic)){notice(role,t('validation'),'error');return}
  if(!body.displayName||(!editing&&body.password.length<(role==='student'?6:12))||role==='student'&&(!Number.isInteger(body.grade)||body.grade<1||body.grade>11)||role==='teacher'&&body.assignedGrades.some(g=>!Number.isInteger(g)||g<1||g>11)){
   notice(role,t('validation'),'error');return;
  }

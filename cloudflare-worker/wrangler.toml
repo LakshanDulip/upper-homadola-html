@@ -1,0 +1,10 @@
+name = "upper-homadola-school-api"
+main = "src/index.js"
+compatibility_date = "2025-09-01"
+workers_dev = true
+[vars]
+PROJECT_ID = "upper-homadola-school"
+ALLOWED_ORIGIN = "https://lakshandulip.github.io"
+# Safe by default. Switch to "true" only after service account,
+# security rules, IAM, account creation and tests are verified.
+ENABLE_ACCOUNT_WRITES = "false"

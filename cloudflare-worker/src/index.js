@@ -130,6 +130,7 @@ function validate(body,role,editing=false){
   if(!validGrade(body.grade))err(400,'Choose a grade from 1 to 11');
   const username=editing?undefined:String(body.admissionNumber||'').trim().toLowerCase();
   if(!editing){
+   if(!/^[A-Z]{2}[0-9]{4}$/.test(body.password))err(400,'Student initial password must contain exactly two uppercase letters and four digits');
    if(!usernamePattern.test(username)||forbidden.test(username))err(400,'Invalid or reserved admission number');
    if(body.password.toLowerCase()===username)err(400,'Admission number cannot be used as password');
   }

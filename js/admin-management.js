@@ -13,7 +13,7 @@ const copy={
  studentIntro:'ඇතුළත් වීමේ අංකය, ශ්‍රේණිය සහ ශිෂ්‍ය ගිණුම් ආරක්ෂිතව කළමනාකරණය කරන්න.',
  teacherIntro:'ස්වයංක්‍රීය Teacher ID, විෂයයන් සහ පවරා ඇති ශ්‍රේණි කළමනාකරණය කරන්න.',
  addStudent:'නව ශිෂ්‍ය ගිණුම',addTeacher:'නව ගුරු ගිණුම',name:'සම්පූර්ණ නම',admission:'ස්ථිර ඇතුළත් වීමේ අංකය',grade:'ශ්‍රේණිය',
- tempPassword:'ආරම්භක මුරපදය',passwordHelp:'අවම අකුරු 6යි. ඉලක්කම් පමණක් වුණත් භාවිත කළ හැකියි. Admission Number එක හෝ පහසුවෙන් අනුමාන කළ හැකි අංක භාවිත නොකරන්න.',showPassword:'Password පෙන්වන්න',hidePassword:'Password සඟවන්න',
+ tempPassword:'ආරම්භක මුරපදය',passwordHelp:'මුල් Password එක ඉංග්‍රීසි ලොකු අකුරු 2ක් + ඉලක්කම් 4ක් (උදා: AA2401). Password ගිණුම සාදන විට පමණක් පෙන්වයි; GitHub/Firestore තුළ සුරැකෙන්නේ නැහැ.',generatePassword:'Password ස්වයංක්‍රීයව සාදන්න',showPassword:'Password පෙන්වන්න',hidePassword:'Password සඟවන්න',
  saveStudent:'ශිෂ්‍ය ගිණුම සාදන්න',saveTeacher:'ගුරු ගිණුම සාදන්න',saveChanges:'වෙනස්කම් සුරකින්න',
  subjects:'විෂයයන් (කොමා වලින් වෙන් කරන්න)',assignedGrades:'පවරා ඇති ශ්‍රේණි (උදා: 6,7,8)',
  autoId:'Teacher ID එක පද්ධතියෙන් ස්වයංක්‍රීයව ලබා දෙනවා.',list:'ගිණුම් ලැයිස්තුව',search:'නම හෝ ID අනුව සොයන්න',
@@ -30,7 +30,7 @@ const copy={
  en:{
  students:'Student management',teachers:'Teacher management',studentIntro:'Securely manage permanent admission numbers, grades and student accounts.',teacherIntro:'Manage automatically assigned teacher IDs, subjects and teaching grades.',
  addStudent:'New student account',addTeacher:'New teacher account',name:'Full name',admission:'Permanent admission number',grade:'Grade',
- tempPassword:'Initial password',passwordHelp:'Minimum 6 characters. Numeric-only passwords are accepted. Do not use the admission number or easily guessed sequences.',showPassword:'Show password',hidePassword:'Hide password',
+ tempPassword:'Initial password',passwordHelp:'Initial password: 2 uppercase English letters + 4 digits (e.g. AA2401). Share privately; never stored in GitHub or Firestore.',generatePassword:'Generate password',showPassword:'Show password',hidePassword:'Hide password',
  saveStudent:'Create student account',saveTeacher:'Create teacher account',saveChanges:'Save changes',
  subjects:'Subjects (comma-separated)',assignedGrades:'Assigned grades (e.g. 6,7,8)',
  autoId:'A unique teacher ID will be generated automatically.',list:'Account directory',search:'Search by name or school ID',
@@ -72,6 +72,27 @@ function language(){
   const toggle=el(role+'-toggle-password');
   if(input&&toggle)toggle.textContent=t(input.type==='text'?'hidePassword':'showPassword');
  }
+}
+/** Generate an initial six-character student password using unbiased CSPRNG draws. */
+function generateStudentPassword(){
+ const alphabet='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+ const letters=new Uint8Array(2);
+ const digits=new Uint8Array(4);
+ let result='';
+ for(let i=0;i<2;i++){
+  let n;
+  do {n=crypto.getRandomValues(new Uint8Array(1))[0]} while(n>=234);
+  letters[i]=n%26;
+  result+=alphabet[letters[i]];
+ }
+ crypto.getRandomValues(digits);
+ // Avoid modulo bias for the digits too.
+ for(let i=0;i<4;i++){
+  let n=digits[i];
+  while(n>=250)n=crypto.getRandomValues(new Uint8Array(1))[0];
+  result+=String(n%10);
+ }
+ return result;
 }
 function parseComma(input){return input.split(',').map(s=>s.trim()).filter(Boolean)}
 function recordForm(role){return el(role+'-form')}
@@ -172,7 +193,7 @@ async function save(role,event){
  if(!body.displayName||(!editing&&body.password.length<(role==='student'?6:12))||role==='student'&&(!Number.isInteger(body.grade)||body.grade<1||body.grade>11)||role==='teacher'&&body.assignedGrades.some(g=>!Number.isInteger(g)||g<1||g>11)){
   notice(role,t('validation'),'error');return;
  }
- if(role==='student'&&!editing&&body.password.toLowerCase()===body.admissionNumber.toLowerCase()){notice(role,t('passwordHelp'),'error');return}
+ if(role==='student'&&!editing&&(!/^[A-Z]{2}[0-9]{4}$/.test(body.password)||body.password.toLowerCase()===body.admissionNumber.toLowerCase())){notice(role,t('passwordHelp'),'error');return}
  button.disabled=true;
  try{
   const response=await request(editing?'/api/accounts/'+encodeURIComponent(form.elements.uid.value):'/api/accounts',{
@@ -201,6 +222,15 @@ export function initAdminManagement(){
    toggle.setAttribute('aria-pressed',String(visible));
   });
   if(role==='student'){
+   el('student-generate-password').addEventListener('click',()=>{
+    // Never persist initial passwords to localStorage, Firestore or GitHub.
+    let generated;
+    do {generated=generateStudentPassword()} while(generated.toLowerCase()===form.elements.admissionNumber.value.trim().toLowerCase());
+    form.elements.password.value=generated;
+    form.elements.password.type='text';
+    toggle.textContent=t('hidePassword');
+    toggle.setAttribute('aria-pressed','true');
+   });
    const options=el('student-grade');
    for(let grade=1;grade<=11;grade++){const option=document.createElement('option');option.value=String(grade);option.textContent=String(grade);options.append(option)}
   }

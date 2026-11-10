@@ -28,13 +28,16 @@ test('admin account forms have show/hide controls for staff and students',()=>{
    assert.ok(admin.includes('id="'+id+'"'),id+' missing');
   assert.ok(management.includes("el(role+'-toggle-password')"));
  }
- assert.doesNotMatch(admin,/student-generate-password/);
+ assert.match(admin,/id="student-generate-password"/);
+ assert.match(management,/function generateStudentPassword\(/);
+ assert.match(backend,/Student initial password must contain exactly two uppercase letters and four digits/);
 });
-test('numeric-only student password and minimum length are preserved',()=>{
+test('generated student initial password format is validated on the server',()=>{
  assert.match(admin,/id="student-initial-password"[^>]*minlength="6"/);
  assert.match(admin,/id="teacher-initial-password"[^>]*minlength="12"/);
  assert.match(backend,/role==='student'\?6:12/);
  assert.match(backend,/Admission number cannot be used as the password/);
+ assert.match(admin,/pattern="\[A-Z\]\{2\}\[0-9\]\{4\}"/);
 });
 test('backend requires trusted admin claims and profile, with no public role selector',()=>{
  assert.match(backend,/verifyIdToken\(header\.slice\(7\),true\)/);

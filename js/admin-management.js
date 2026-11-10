@@ -13,7 +13,7 @@ const copy={
  studentIntro:'ඇතුළත් වීමේ අංකය, ශ්‍රේණිය සහ ශිෂ්‍ය ගිණුම් ආරක්ෂිතව කළමනාකරණය කරන්න.',
  teacherIntro:'ස්වයංක්‍රීය Teacher ID, විෂයයන් සහ පවරා ඇති ශ්‍රේණි කළමනාකරණය කරන්න.',
  addStudent:'නව ශිෂ්‍ය ගිණුම',addTeacher:'නව ගුරු ගිණුම',name:'සම්පූර්ණ නම',admission:'ස්ථිර ඇතුළත් වීමේ අංකය',grade:'ශ්‍රේණිය',
- tempPassword:'ආරම්භක මුරපදය',passwordHelp:'ශිෂ්‍යයාගේ අංකය Password ලෙස භාවිත නොකරන්න. ශක්තිමත් තාවකාලික Password එකක් සාදා, ශිෂ්‍යයාට ආරක්ෂිතව ලබා දෙන්න. පළමු පිවිසුමෙන් පසු වෙනස් කරන්න.',generatePassword:'ආරක්ෂිත Password එකක් සාදන්න',copyPassword:'Password Copy කරන්න',passwordCopied:'Password Copy කළා. ආරක්ෂිතව ශිෂ්‍යයාට ලබා දෙන්න.',noPassword:'මුලින් Password එකක් Generate කරන්න.',
+ tempPassword:'ආරම්භක මුරපදය',passwordHelp:'ශිෂ්‍ය Password අවම අකුරු/ඉලක්කම් 6යි. Admission Number එකම Password එක ලෙස භාවිත නොකරන්න. වඩා දිග Password එකක් වඩා ආරක්ෂිතයි.',generatePassword:'ආරක්ෂිත Password එකක් සාදන්න',copyPassword:'Password Copy කරන්න',passwordCopied:'Password Copy කළා. ආරක්ෂිතව ශිෂ්‍යයාට ලබා දෙන්න.',noPassword:'මුලින් Password එකක් Generate කරන්න.',
  saveStudent:'ශිෂ්‍ය ගිණුම සාදන්න',saveTeacher:'ගුරු ගිණුම සාදන්න',saveChanges:'වෙනස්කම් සුරකින්න',
  subjects:'විෂයයන් (කොමා වලින් වෙන් කරන්න)',assignedGrades:'පවරා ඇති ශ්‍රේණි (උදා: 6,7,8)',
  autoId:'Teacher ID එක පද්ධතියෙන් ස්වයංක්‍රීයව ලබා දෙනවා.',list:'ගිණුම් ලැයිස්තුව',search:'නම හෝ ID අනුව සොයන්න',
@@ -30,7 +30,7 @@ const copy={
  en:{
  students:'Student management',teachers:'Teacher management',studentIntro:'Securely manage permanent admission numbers, grades and student accounts.',teacherIntro:'Manage automatically assigned teacher IDs, subjects and teaching grades.',
  addStudent:'New student account',addTeacher:'New teacher account',name:'Full name',admission:'Permanent admission number',grade:'Grade',
- tempPassword:'Initial password',passwordHelp:'Never use the admission number as a password. Generate a strong temporary password, deliver it privately, and change it after first sign-in.',generatePassword:'Generate secure password',copyPassword:'Copy password',passwordCopied:'Password copied. Share privately with the student.',noPassword:'Generate a password first.',
+ tempPassword:'Initial password',passwordHelp:'Student passwords require at least 6 characters. Never reuse the admission number as a password. Longer passwords are safer; share credentials privately.',generatePassword:'Generate secure password',copyPassword:'Copy password',passwordCopied:'Password copied. Share privately with the student.',noPassword:'Generate a password first.',
  saveStudent:'Create student account',saveTeacher:'Create teacher account',saveChanges:'Save changes',
  subjects:'Subjects (comma-separated)',assignedGrades:'Assigned grades (e.g. 6,7,8)',
  autoId:'A unique teacher ID will be generated automatically.',list:'Account directory',search:'Search by name or school ID',
@@ -63,7 +63,7 @@ function language(){
  for(const role of ['student','teacher'])render(role);
 }
 /**
- * Generates a 20-character temporary password using CSPRNG; no persistence
+ * Generates a 6-character temporary password using CSPRNG; no persistence
  * in GitHub, browser storage or Firestore. 64-character alphabet allows unbiased
  * selection by masking 6 random bits.
  */
@@ -71,12 +71,12 @@ function secureTemporaryPassword(){
  const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789-_@!';
  // Alphabet length is not a power of two: use rejection sampling to avoid bias.
  const bytes=new Uint8Array(48);let result='';
- while(result.length<20){
+ while(result.length<6){
   crypto.getRandomValues(bytes);
   for(const value of bytes){
    if(value>=Math.floor(256/alphabet.length)*alphabet.length)continue;
    result+=alphabet[value%alphabet.length];
-   if(result.length===20)break;
+   if(result.length===6)break;
   }
  }
  return result;
@@ -168,7 +168,7 @@ async function save(role,event){
   body.assignedGrades=parseComma(form.elements.assignedGrades.value).map(Number);
  }
  if(!editing)body.password=form.elements.password.value;
- if(!body.displayName||(!editing&&body.password.length<12)||role==='student'&&(!Number.isInteger(body.grade)||body.grade<1||body.grade>11)||role==='teacher'&&body.assignedGrades.some(g=>!Number.isInteger(g)||g<1||g>11)){
+ if(!body.displayName||(!editing&&body.password.length<(role==='student'?6:12))||role==='student'&&(!Number.isInteger(body.grade)||body.grade<1||body.grade>11)||role==='teacher'&&body.assignedGrades.some(g=>!Number.isInteger(g)||g<1||g>11)){
   notice(role,t('validation'),'error');return;
  }
  if(role==='student'&&!editing&&body.password.toLowerCase()===body.admissionNumber.toLowerCase()){notice(role,t('passwordHelp'),'error');return}

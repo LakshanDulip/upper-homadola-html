@@ -69,7 +69,7 @@ function alertPassword(key,isSuccess=false){status.textContent=t(key);status.cla
 document.getElementById('password-toggle').addEventListener('click',()=>{const visible=newPassword.type==='password';for(const input of [newPassword,oldPassword,confirmPassword])input.type=visible?'text':'password';document.getElementById('password-toggle').textContent=t(visible?'hide':'show')});
 form.addEventListener('submit',async e=>{
  e.preventDefault();status.hidden=true;
- if(newPassword.value.length<12){alertPassword('dashPasswordTooShort');return}
+ if(newPassword.value.length<(role==='student'?6:12)){alertPassword(role==='student'?'dashPasswordTooShortStudent':'dashPasswordTooShort');return}
  if(newPassword.value!==confirmPassword.value){alertPassword('dashPasswordMismatch');return}
  if(newPassword.value===oldPassword.value){alertPassword('dashPasswordSame');return}
  const submit=document.getElementById('password-submit');submit.disabled=true;submit.textContent=t('dashChanging');

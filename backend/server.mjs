@@ -44,7 +44,7 @@ function validateCreate(body,role){
  const displayName=String(body.displayName||'').trim();
  if(!checkText(displayName))fail(400,'Enter a valid name (2–120 characters)');
  const password=body.password;
- if(typeof password!=='string'||password.length<12||password.length>128)fail(400,'Temporary password must contain 12–128 characters');
+ if(typeof password!=='string'||password.length<(role==='student'?6:12)||password.length>128)fail(400,role==='student'?'Student password must contain 6–128 characters':'Teacher password must contain 12–128 characters');
  if(body.role==='student'&&password.toLowerCase()===String(body.admissionNumber||'').trim().toLowerCase())fail(400,'Admission number cannot be used as the password');
  if(role==='student'){
   const admissionNumber=String(body.admissionNumber||'').trim().toLowerCase();

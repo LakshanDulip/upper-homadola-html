@@ -8,25 +8,38 @@ The Worker uses native JavaScript, WebCrypto and Google REST services rather tha
 
 **Important:** The Firebase Identity Toolkit Admin REST account-creation route has not yet been integration-tested against this Firebase project. Keep writes disabled until you complete a controlled non-production integration test. Code syntax tests do not prove the Google REST endpoints or Cloudflare deployment work.
 
-## Cloudflare dashboard (no computer installation)
+## Fixing 404 on /health — Cloudflare dashboard, GitHub-only
 
-1. Cloudflare Dashboard -> **Workers & Pages** -> **Create** -> **Worker**.
-2. Choose **Connect to Git** if offered, authorize GitHub, then select **LakshanDulip/upper-homadola-html** and branch `main`.
-3. Set the **root directory** to `cloudflare-worker` (if shown). Deploy command: `npx wrangler deploy`. If the interface offers only a starter Worker, create it first, then connect the Git repository through its Settings/Build configuration. Exact labels can differ.
-4. Confirm the Worker name is `upper-homadola-school-api` and config points to `cloudflare-worker/wrangler.toml`.
-5. The Worker deployment should provide a URL such as `https://upper-homadola-school-api.<account-subdomain>.workers.dev`. This is a PUBLIC endpoint URL, not a secret. Do not guess it.
-6. Open `https://<your-worker-url>/health`. Expected:
+The existing Cloudflare Worker URL supplied by the school operator is
+`https://upper-homadola-html.lxn4096.workers.dev/`.
+The previous Wrangler config used a **different Worker name**, so deployment could
+have updated a different Worker while this existing URL still served an old starter script.
+The Wrangler `name` is now **upper-homadola-html** to target the existing Worker.
+
+1. Open [Cloudflare Dashboard](https://dash.cloudflare.com/) -> **Workers & Pages** -> **upper-homadola-html**.
+2. Open **Settings -> Builds** (or **Settings -> Build & Deploy**).
+3. Confirm the Git connection points to `LakshanDulip/upper-homadola-html`, production branch `main`. If not connected, use **Connect to Git** and authorize this repository.
+4. For a repository-root build (no Root Directory field), set **Deploy command** exactly:
+   ```text
+   npx --yes wrangler deploy --config cloudflare-worker/wrangler.toml
+   ```
+   Leave the build command blank unless the Cloudflare UI requires one. If it requires one, use `npm install`. Do **not** use a Pages static-site deploy command.
+5. If the dashboard supports a Root Directory setting, it can instead be `cloudflare-worker`; then use `npx wrangler deploy`. Do **not** combine this root setting with the repo-root `--config cloudflare-worker/wrangler.toml` path.
+6. **Save** build settings and select **Deploy latest commit** / **Retry deployment** (label varies). Merely changing GitHub source is not proof Cloudflare deployed.
+7. Verify [Worker health endpoint](https://upper-homadola-html.lxn4096.workers.dev/health). Expected without credentials:
    ```json
    {"status":"ok","writeEnabled":false,"credentialsConfigured":false}
    ```
-7. In **Settings -> Variables and Secrets**, set **FIREBASE_SERVICE_ACCOUNT_JSON** as **Secret (encrypted)** to the full valid GCP service-account JSON. This is sensitive. Never post it in chat, GitHub, a screenshot or a commit. Use a dedicated, scoped service account, not your Google user account. The `school-admin-api@upper-homadola-school.iam.gserviceaccount.com` service account previously created for Cloud Run can be reused only if the project owner consciously authorizes key issuance. Creating a JSON private key increases risk; prefer short-lived workload identity federation when available.
-8. Keep `PROJECT_ID=upper-homadola-school`, `ALLOWED_ORIGIN=https://lakshandulip.github.io` and `ENABLE_ACCOUNT_WRITES=false` as configured in `wrangler.toml`.
-9. Verify `/health` now shows `credentialsConfigured:true` and `writeEnabled:false`.
-10. The Worker must pass authorization checks: unauthenticated `/api/accounts` returns **401**, invalid/non-admin sessions are rejected, and an authorized Admin token can list `/api/accounts?role=student`.
-11. Only after safe read-only integration testing of Firestore/Firebase REST APIs and controlled account creation in an isolated test project, change `ENABLE_ACCOUNT_WRITES` to `"true"` and redeploy. **There is no one-click live-account-creation guarantee at this stage.**
-12. Once a verified Cloudflare Worker URL is available, configure `js/api-config.js` with that URL and push to GitHub. Do not put a secret in that file.
+   If still 404, inspect **Deployments** to see if the latest deployment is associated with `upper-homadola-html` and the config entrypoint `cloudflare-worker/src/index.js`. Check **Build logs** for Wrangler errors. Do not paste secrets or authorization tokens.
 
-**Cloudflare account ownership is separate from GitHub access.** Connecting the GitHub repository or deploying a Worker requires explicit Cloudflare account authorization through its dashboard; a GitHub push cannot silently deploy to an unconnected Cloudflare account.
+## Next steps after /health works
+
+- **First deployment is read-only.** The `ENABLE_ACCOUNT_WRITES` variable remains `"false"`; never change it merely to fix a 404.
+- A private encrypted Worker secret `FIREBASE_SERVICE_ACCOUNT_JSON` is needed before any Firebase reads/writes are possible. Never store its JSON in GitHub or paste it into a chat. Creating a long-lived service account key incurs security risk; consider keyless federation with an appropriate trusted provider if feasible.
+- Check unauthenticated `/api/accounts?role=student` returns 401. Perform permission and read-only integration tests before allowing writes.
+- Only after isolated safe integration tests should the API configuration be connected in `js/api-config.js`. A live /health response does **not** prove account creation works.
+
+**Cloudflare account ownership is separate from GitHub.** These GitHub changes cannot operate the user's Cloudflare account or trigger a deployment unless the Cloudflare Git integration is connected.
 
 ## Firebase permissions and security
 

@@ -26,6 +26,7 @@ jobs:
           test -f js/auth.js
           test -f js/auth-i18n.js
           test -f js/dashboard.js
+          test -f tests/smoke.test.mjs
           test -f js/admin-management.js
           test -f js/api-config.js
           test -f css/management.css

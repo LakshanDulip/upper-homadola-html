@@ -19,7 +19,11 @@ function showFailure(key){
  loader.append(paragraph,document.createElement('br'),anchor);loader.hidden=false;frame.hidden=true;
 }
 function put(id,value){const element=document.getElementById(id);if(element)element.textContent=value}
-function view(name){for(const [key,el] of Object.entries(sections))el.hidden=key!==name;
+function view(name){
+ // Student, teacher and other non-admin dashboards do not contain management panels.
+ // Ignore missing elements instead of crashing every non-admin dashboard.
+ if(!sections[name])return;
+ for(const [key,el] of Object.entries(sections))if(el)el.hidden=key!==name;
  for(const button of document.querySelectorAll('[data-view]')){const active=button.dataset.view===name;button.classList.toggle('active',active);button.setAttribute('aria-current',active?'page':'false')}
  if(name==='settings')document.getElementById('current-password').focus();
  document.dispatchEvent(new CustomEvent('school-dashboard-view',{detail:{view:name}}));
@@ -73,7 +77,7 @@ form.addEventListener('submit',async e=>{
  if(newPassword.value!==confirmPassword.value){alertPassword('dashPasswordMismatch');return}
  if(newPassword.value===oldPassword.value){alertPassword('dashPasswordSame');return}
  const submit=document.getElementById('password-submit');submit.disabled=true;submit.textContent=t('dashChanging');
- try{await changePassword(oldPassword.value,newPassword.value);form.reset();alertPassword('dashPasswordSuccess',true);setTimeout(()=>location.replace(loginUrl()),1200)}
+ try{await changePassword(oldPassword.value,newPassword.value);form.reset();alertPassword('dashPasswordSuccess',true);location.replace(loginUrl())}
  catch{alertPassword('dashPasswordFail')}
  finally{submit.disabled=false;submit.textContent=t('dashChange')}
 });

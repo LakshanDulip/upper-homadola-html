@@ -8,9 +8,15 @@ const form=document.getElementById('login-form'),button=document.getElementById(
 let busy=false;
 function showError(key){error.textContent=t(key);error.hidden=false}
 function setBusy(value){busy=value;button.disabled=value;button.querySelector('span').textContent=t(value?'signingIn':'signIn')}
-document.addEventListener('school-language-change',()=>{if(busy)setBusy(true)});
+document.addEventListener('school-language-change',()=>{
+ if(busy)setBusy(true);
+ for(const toggle of document.querySelectorAll('[data-toggle-password]')){
+  const field=document.getElementById(toggle.dataset.togglePassword);
+  toggle.textContent=t(field.type==='password'?'show':'hide');
+ }
+});
 for(const toggle of document.querySelectorAll('[data-toggle-password]')){
- toggle.addEventListener('click',()=>{const field=document.getElementById(toggle.dataset.togglePassword);field.type=field.type==='password'?'text':'password';toggle.textContent=t(field.type==='password'?'show':'hide')});
+ toggle.addEventListener('click',()=>{const field=document.getElementById(toggle.dataset.togglePassword);field.type=field.type==='password'?'text':'password';toggle.textContent=t(field.type==='password'?'show':'hide');toggle.setAttribute('aria-pressed',String(field.type==='text'))});
 }
 onAuthStateChanged(auth,async user=>{
  if(!user||busy)return;

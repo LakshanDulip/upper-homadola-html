@@ -53,7 +53,6 @@ function notice(role,message,type='info'){
  const target=el(role+'-management-message');if(!target)return;
  target.textContent=message;target.className='management-message '+type;target.hidden=false;
 }
-function text(node,value){node.textContent=value;return node}
 function createNode(tag,cls,value){
  const node=document.createElement(tag);if(cls)node.className=cls;if(value!==undefined)node.textContent=value;return node;
 }
@@ -61,8 +60,15 @@ function language(){
  for(const element of document.querySelectorAll('[data-manage-text]'))element.textContent=t(element.dataset.manageText);
  for(const element of document.querySelectorAll('[data-manage-placeholder]'))element.placeholder=t(element.dataset.managePlaceholder);
  for(const role of ['student','teacher']){
+  const form=recordForm(role);
+  if(!form)continue;
+  const editing=Boolean(form.elements.uid.value);
+  const title=el(role+'-form-title');
+  const save=el(role+'-submit');
+  title.textContent=editing?t('edit')+' · '+(role==='student'?form.elements.admissionNumber.value:cached.teacher.find(a=>a.uid===form.elements.uid.value)?.username||''):t(role==='student'?'addStudent':'addTeacher');
+  save.textContent=t(editing?'saveChanges':role==='student'?'saveStudent':'saveTeacher');
   render(role);
-  const input=recordForm(role)?.elements.password;
+  const input=form.elements.password;
   const toggle=el(role+'-toggle-password');
   if(input&&toggle)toggle.textContent=t(input.type==='text'?'hidePassword':'showPassword');
  }
@@ -82,6 +88,8 @@ function editRecord(role,account){
   form.elements.assignedGrades.value=(account.assignedGrades||[]).join(', ');
  }
  const passwordField=el(role+'-password-field');passwordField.hidden=true;form.elements.password.required=false;form.elements.password.value='';
+ form.elements.password.type='password';
+ const toggle=el(role+'-toggle-password');toggle.setAttribute('aria-pressed','false');toggle.textContent=t('showPassword');
  const headline=el(role+'-form-title');headline.textContent=t('edit')+' · '+account.username;
  const save=el(role+'-submit');save.textContent=t('saveChanges');
  el(role+'-cancel').hidden=false;
@@ -117,8 +125,11 @@ function render(role){
   toggle.addEventListener('click',async()=>{
    if(!confirm(t('confirmStatus')+'\n'+account.username))return;
    toggle.disabled=true;
-   try{await request('/api/accounts/'+encodeURIComponent(account.uid)+'/status',{method:'PATCH',body:{active:!account.active}});notice(role,t('statusUpdated'),'success');await load(role)}
-   catch(err){notice(role,err.message||t('failed'),'error')}
+   try{
+    await request('/api/accounts/'+encodeURIComponent(account.uid)+'/status',{method:'PATCH',body:{active:!account.active}});
+    await load(role);
+    notice(role,t('statusUpdated'),'success');
+   }catch(err){notice(role,err.message||t('failed'),'error')}
    finally{toggle.disabled=false}
   });
   actions.append(edit,toggle);row.append(actions);rows.append(row);
@@ -168,7 +179,6 @@ async function save(role,event){
    method:editing?'PATCH':'POST',body:editing?body:{...body,role}
   });
   // Never store or echo temporary credentials.
-  notice(role,t(editing?'updated':'created')+(response.username?' · '+response.username:''),'success');
   resetForm(role);await load(role);
   notice(role,t(editing?'updated':'created')+(response.username?' · '+response.username:''),'success');
  }catch(err){notice(role,err.message||t('failed'),'error')}

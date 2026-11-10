@@ -19,7 +19,7 @@ initializeApp({credential:applicationDefault(),projectId:PROJECT_ID});
 const auth = getAuth(), db = getFirestore();
 const usernamePattern = /^[a-z0-9_-]{1,40}$/;
 const studentIdPattern = /^[a-z0-9_-]{1,40}$/;
-const invalidStudentPrefix = /^(admin|admin2|superadmin|principal|tch-)/;
+const invalidStudentPrefix = /^(?:admin(?:2)?|superadmin|principal|developer|tch-)/;
 const roles = new Set(['student','teacher']);
 const JSON_HEADERS = {'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff'};
 const json = (res, status, data, origin='')=>{

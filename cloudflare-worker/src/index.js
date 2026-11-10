@@ -18,7 +18,7 @@ const idPattern=/^[A-Za-z0-9_-]{1,128}$/;
 const forbidden=/^(?:admin(?:2)?|superadmin|principal|developer|tch-)/;
 const encoder=new TextEncoder();
 const decoder=new TextDecoder();
-let cachedCerts=null,certExpiresAt=0,oauthCache=null;
+let cachedJwks=null,jwksExpiresAt=0,oauthCache=null;
 const err=(status,message)=>{const e=new Error(message);e.status=status;throw e};
 const toB64Url=bytes=>{
  let s='';for(const n of bytes)s+=String.fromCharCode(n);
@@ -84,15 +84,10 @@ const authUrl=(env,suffix)=>'https://identitytoolkit.googleapis.com/v1/projects/
 const firestoreBase=env=>'https://firestore.googleapis.com/v1/projects/'+encodeURIComponent(env.PROJECT_ID)+'/databases/(default)/documents';
 const docPath=(env,path)=>firestoreBase(env)+'/'+path.split('/').map(encodeURIComponent).join('/');
 async function docGet(env,path){const data=await adminJson(env,docPath(env,path));return data.__notFound?null:data}
-async function docCreate(env,path,fields){
- const parts=path.split('/'),id=parts.pop(),parent=parts.join('/');
- const url=docPath(env,parent)+'?documentId='+encodeURIComponent(id);
- return adminJson(env,url,'POST',{fields:toFields(fields)});
-}
 async function docPatch(env,path,changes){
  const url=new URL(docPath(env,path));
  for(const key of Object.keys(changes))url.searchParams.append('updateMask.fieldPaths',key);
- return adminJson(env,url.toString(),'PATCH',{fields:toFields(changes)});
+ return adminJson(env,url.toString()+'&currentDocument.exists=true','PATCH',{fields:toFields(changes)});
 }
 const fv=value=>{
  if(value===null)return {nullValue:null};
@@ -143,15 +138,15 @@ function validate(body,role,editing=false){
  if(!validSubjects(body.subjects||[])||!validGrades(body.assignedGrades||[]))err(400,'Invalid subject or grade assignment');
  return {displayName,subjects:[...new Set(body.subjects||[])],assignedGrades:body.assignedGrades||[],...(!editing?{password:body.password}:{})};
 }
-async function firebaseCerts(){
- if(cachedCerts&&Date.now()<certExpiresAt)return cachedCerts;
- const res=await fetch('https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com');
+async function firebaseJwks(){
+ if(cachedJwks&&Date.now()<jwksExpiresAt)return cachedJwks;
+ const res=await fetch('https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com');
  if(!res.ok)err(503,'Cannot verify Firebase session');
- const certs=await res.json();
- if(!certs||typeof certs!=='object')err(503,'Invalid Firebase certificate response');
+ const jwks=await res.json();
+ if(!jwks||!Array.isArray(jwks.keys))err(503,'Invalid Firebase signing key response');
  const age=(res.headers.get('cache-control')||'').match(/max-age=(\d+)/);
- cachedCerts=certs;certExpiresAt=Date.now()+Math.min(Number(age?.[1]||3600),21600)*1000;
- return certs;
+ cachedJwks=jwks;jwksExpiresAt=Date.now()+Math.min(Number(age?.[1]||3600),21600)*1000;
+ return jwks;
 }
 async function verifyFirebaseJwt(env,token){
  if(token.length>8192)err(401,'Invalid authentication token');
@@ -164,16 +159,8 @@ async function verifyFirebaseJwt(env,token){
   ||typeof payload.exp!=='number'||payload.exp<=now
   ||typeof payload.auth_time!=='number'||payload.auth_time>now+60
  )err(401,'Expired or invalid authentication session');
- const pem=(await firebaseCerts())[header.kid];
- if(!pem)err(401,'Unknown Firebase signing key');
- const der=pemToDer(pem);
- // Google serves X.509 PEM certificates, not public-key PEM. Extract SPKI via
- // WebCrypto? DER X509 is not importable as spki. Use Firebase's public JWKS
- // endpoint for direct JWK import instead (see fetch below).
- const jwksRes=await fetch('https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com');
- if(!jwksRes.ok)err(503,'Firebase signing keys unavailable');
- const jwks=await jwksRes.json();
- const jwk=(jwks.keys||[]).find(k=>k.kid===header.kid&&k.kty==='RSA');
+ const jwks=await firebaseJwks();
+ const jwk=jwks.keys.find(k=>k.kid===header.kid&&k.kty==='RSA'&&k.use!=='enc');
  if(!jwk)err(401,'Unknown Firebase signing key');
  const key=await crypto.subtle.importKey('jwk',jwk,{name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'},false,['verify']);
  const okay=await crypto.subtle.verify('RSASSA-PKCS1-v1_5',key,fromB64Url(parts[2]),encoder.encode(parts[0]+'.'+parts[1]));

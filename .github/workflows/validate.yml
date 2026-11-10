@@ -31,5 +31,7 @@ jobs:
           test -f js/api-config.js
           test -f css/management.css
           test -f backend/server.mjs
+          test -f cloudflare-worker/src/index.js
+          test -f cloudflare-worker/wrangler.toml
           for role in student teacher admin principal superadmin developer; do test -f "dashboards/$role.html"; done
           git diff --check HEAD^ HEAD || true
